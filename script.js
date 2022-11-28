@@ -2,7 +2,9 @@ import "./style.css";
 import * as THREE from "three";
 import gsap from "gsap";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { Group } from "three";
 
 const canvas = document.querySelector("canvas.webgl");
 
@@ -21,6 +23,7 @@ const clock = new THREE.Clock();
 const axesHelper = new THREE.AxesHelper(10);
 const axesHelper2 = new THREE.AxesHelper(8);
 const cameraHelper = new THREE.CameraHelper(camera);
+const mainGroup = new THREE.Group();
 
 const planeBakedTex = textureLoader.load("plane-baked.jpg");
 const polymanBakedTex = textureLoader.load("polyman-baked.jpg");
@@ -38,10 +41,10 @@ let cubeMesh;
 
 gltfLoader.load("scene.glb", (gltf) => {
   plane = gltf.scene.children.find((child) => child.name === "Plane");
+  plane.receiveShadow = true;
   polyman = gltf.scene.children.find((child) => child.name === "PolyMan");
   plane.material = planeMaterial;
   polyman.material = polymanMaterial;
-  scene.add(gltf.scene);
   polyman.add(axesHelper);
 
   gltfLoaded = gltf.scene;
@@ -54,8 +57,46 @@ gltfLoader.load("scene.glb", (gltf) => {
   cubeMesh.position.set(0, 21, 21);
   gltf.scene.add(cubeMesh);
 
-  console.log(cubeMesh);
+  mainGroup.add(plane);
+  mainGroup.add(cubeMesh);
 });
+
+let mixer;
+let fbxmodel;
+let animationModel;
+
+const ambient = new THREE.AmbientLight(0x404040);
+const hemilight = new THREE.HemisphereLight(0x6d9ce8, 0x1d3152, 0.05);
+const directionalLight = new THREE.DirectionalLight(0x2d498c, 0.5);
+directionalLight.position.set(20, 30, -30);
+directionalLight.castShadow = true;
+const dirLightHelper = new THREE.DirectionalLightHelper(directionalLight, 5);
+scene.add(directionalLight, dirLightHelper);
+
+scene.add(hemilight);
+
+const fbxloader = new FBXLoader();
+const animeLoader = new FBXLoader();
+fbxloader.load("polyman.fbx", (fbx) => {
+  fbxmodel = fbx;
+  fbx.traverse((child) => {
+    child.castShadow = true;
+  });
+  const polyman = fbx.children.find((child) => child.name === "PolyMan");
+  fbx.rotation.y = Math.PI;
+  animeLoader.load("polyman-anime.fbx", (animation) => {
+    animationModel = animation;
+    mixer = new THREE.AnimationMixer(fbx);
+    const idle = mixer.clipAction(animation.animations[0]);
+    idle.play();
+    console.log(polyman);
+    mainGroup.add(fbx);
+  });
+  scene.add(fbx);
+});
+
+mainGroup.add(directionalLight);
+scene.add(mainGroup);
 
 scene.add(camera, cameraHelper);
 camera.position.set(0, 7, 7);
@@ -90,7 +131,6 @@ document.querySelector("#button").addEventListener("click", () => {
   rotationEnabled = false;
   controls.enabled = false;
   gsap.to(controls.target, { x: 0, duration: 2 });
-  // gsap.to(camera.position, {y: 21, z: 21, duration: 3})
 
   if (gltfLoaded) {
     const vec3cube = new THREE.Vector3();
@@ -119,8 +159,13 @@ const tick = () => {
   const deltaTime = currentTime - time;
   time = currentTime;
 
+  if (fbxmodel && animationModel) {
+    mixer.update(clock.getDelta());
+  }
+
+  // Rotation Animation
   if (gltfLoaded && rotationEnabled) {
-    gltfLoaded.rotation.y += 0.001 * deltaTime;
+    mainGroup.rotation.y += 0.0003 * deltaTime;
   }
 
   renderer.render(scene, camera);
