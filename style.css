@@ -1,0 +1,112 @@
+@import url("https://fonts.cdnfonts.com/css/couture");
+
+:root {
+  --angle: 90deg;
+}
+
+* {
+  border: 1px solid red;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.main {
+  display: flex;
+  height: 100vh;
+}
+
+.main-text {
+  position: absolute;
+  top: 40vh;
+  left: 15vw;
+  height: fit-content;
+  font-family: sans-serif;
+  text-transform: uppercase;
+  font-weight: 900;
+  font-size: 5vmax;
+}
+
+/* #main-text::after {
+ color: white;
+
+}
+
+#main-text:hover {
+    background-clip: text;
+    -webkit-background-clip: text;
+    background-image: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    color: transparent;
+    animation: gradient 15s ease infinite;
+} */
+
+/* @keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+} */
+
+.sub-text {
+  height: fit-content;
+  font-family: "Cabin", sans-serif;
+  text-transform: uppercase;
+  font-weight: 500;
+  font-size: 1vmax;
+  letter-spacing: 0.2vmax;
+  position: absolute;
+  right: 0;
+}
+
+.enter-button {
+  height: fit-content;
+  font-family: "Cabin", sans-serif;
+  text-transform: uppercase;
+  font-size: 1.5vmax;
+  letter-spacing: 0.2vmax;
+  position: absolute;
+  right: 0vmax;
+  top: 10vmax;
+  background-image: conic-gradient(
+    from 0deg,
+    #fd004c,
+    #fe9000,
+    #fff020,
+    #3edf4b,
+    #3363ff,
+    #b102b7,
+    #fd004c
+  );
+  filter: brightness(130%);
+  width: 12.5vmax;
+  height: 2.5vmax;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: spin 1s infinite linear;
+}
+
+/* @keyframes spin {
+    100%{
+        transform: rotate(360deg)
+        ;}
+     
+} */
+
+#enter-text {
+  border: 1px solid blue;
+}
+
+#enter-text {
+  color: red;
+}
