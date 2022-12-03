@@ -9,8 +9,8 @@ import { Group } from "three";
 const canvas = document.querySelector("canvas.webgl");
 
 const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
+	width: window.innerWidth,
+	height: window.innerHeight,
 };
 
 const scene = new THREE.Scene();
@@ -40,30 +40,26 @@ let polyman;
 let cubeMesh;
 
 gltfLoader.load("scene.glb", (gltf) => {
-  plane = gltf.scene.children.find((child) => child.name === "Plane");
-  plane.receiveShadow = true;
-  polyman = gltf.scene.children.find((child) => child.name === "PolyMan");
-  plane.material = planeMaterial;
-  polyman.material = polymanMaterial;
-  polyman.add(axesHelper);
+	plane = gltf.scene.children.find((child) => child.name === "Plane");
+	plane.receiveShadow = true;
+	polyman = gltf.scene.children.find((child) => child.name === "PolyMan");
+	plane.material = planeMaterial;
+	polyman.material = polymanMaterial;
+	plane.add(axesHelper);
 
-  gltfLoaded = gltf.scene;
+	gltfLoaded = gltf.scene;
 
-  const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
-  const cubeMaterial = new THREE.MeshBasicMaterial({ color: "red" });
-  cubeMaterial.transparent = true;
-  cubeMaterial.opacity = 0;
-  cubeMesh = new THREE.Mesh(cubeGeo, cubeMaterial);
-  cubeMesh.position.set(0, 21, 21);
-  gltf.scene.add(cubeMesh);
+	const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
+	const cubeMaterial = new THREE.MeshBasicMaterial({ color: "red" });
+	cubeMaterial.transparent = true;
+	cubeMaterial.opacity = 0;
+	cubeMesh = new THREE.Mesh(cubeGeo, cubeMaterial);
+	cubeMesh.position.set(0, 21, 21);
+	gltf.scene.add(cubeMesh);
 
-  mainGroup.add(plane);
-  mainGroup.add(cubeMesh);
+	mainGroup.add(plane);
+	mainGroup.add(cubeMesh);
 });
-
-let mixer;
-let fbxmodel;
-let animationModel;
 
 const ambient = new THREE.AmbientLight(0x404040);
 const hemilight = new THREE.HemisphereLight(0x6d9ce8, 0x1d3152, 0.05);
@@ -75,24 +71,38 @@ scene.add(directionalLight, dirLightHelper);
 
 scene.add(hemilight);
 
+let mixer;
+let fbxmodel;
+let idleAction;
+let walkingClip;
+const animations = [];
+
 const fbxloader = new FBXLoader();
 const animeLoader = new FBXLoader();
+
 fbxloader.load("polyman.fbx", (fbx) => {
-  fbxmodel = fbx;
-  fbx.traverse((child) => {
-    child.castShadow = true;
-  });
-  const polyman = fbx.children.find((child) => child.name === "PolyMan");
-  fbx.rotation.y = Math.PI;
-  animeLoader.load("polyman-anime.fbx", (animation) => {
-    animationModel = animation;
-    mixer = new THREE.AnimationMixer(fbx);
-    const idle = mixer.clipAction(animation.animations[0]);
-    idle.play();
-    console.log(polyman);
-    mainGroup.add(fbx);
-  });
-  scene.add(fbx);
+	mixer = new THREE.AnimationMixer(fbx);
+	fbxmodel = fbx;
+	fbx.add(axesHelper2);
+	fbx.rotation.y = Math.PI;
+	
+	animeLoader.load("polyman-anime.fbx", (animation) => {
+		idleAction = mixer.clipAction(animation.animations[0]);	
+		// console.log(mixer.clipAction(animation.animations[0]));	// This is the animation 'Action'
+		// console.log(animation.animations[0]); 					// This is the animation 'Clip'
+		idleAction.play();
+		animations.push(idleAction)
+	});
+
+	animeLoader.load("polyman-walk-anime.fbx", (animation) => { 
+		walkingClip = mixer.clipAction(animation.animations[0]);
+		animations.push(walkingClip)
+	});
+
+	scene.add(fbx);
+	mainGroup.add(fbx);
+	console.log(animations);
+
 });
 
 mainGroup.add(directionalLight);
@@ -115,64 +125,96 @@ controls.target.set(-3, 3, 0);
 
 // Resize Event Listener
 window.addEventListener("resize", () => {
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
+	sizes.width = window.innerWidth;
+	sizes.height = window.innerHeight;
 
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
+	camera.aspect = sizes.width / sizes.height;
+	camera.updateProjectionMatrix();
 
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+	renderer.setSize(sizes.width, sizes.height);
+	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-// 'Enter Here' Event Listener
+// 'Enter Here' Button Event Listener
 document.querySelector("#button").addEventListener("click", () => {
-  document.styleSheets[0].cssRules[3].style.opacity = 0;
-  rotationEnabled = false;
-  controls.enabled = false;
-  gsap.to(controls.target, { x: 0, duration: 2 });
+	document.styleSheets[0].cssRules[3].style.opacity = 0;
+	rotationEnabled = false;
+	controls.enabled = true;
+	gsap.to(controls.target, { x: 0, duration: 2 });
 
-  if (gltfLoaded) {
-    const vec3cube = new THREE.Vector3();
-    const vec3cam = new THREE.Vector3();
-    cubeMesh.getWorldPosition(vec3cube);
-    camera.getWorldPosition(vec3cam);
-    console.log(vec3cube.x, vec3cube.y, vec3cube.z);
-    console.log(vec3cam.x, vec3cam.y, vec3cam.z);
-    gsap.to(camera.position, {
-      x: vec3cube.x,
-      y: vec3cube.y,
-      z: vec3cube.z,
-      duration: 3,
-    });
-  }
+	if (gltfLoaded) {
+		const vec3cube = new THREE.Vector3();
+		const vec3cam = new THREE.Vector3();
+		cubeMesh.getWorldPosition(vec3cube);
+		camera.getWorldPosition(vec3cam);
+		console.log(vec3cube.x, vec3cube.y, vec3cube.z);
+		console.log(vec3cam.x, vec3cam.y, vec3cam.z);
+		gsap.to(camera.position, {
+			x: vec3cube.x,
+			y: vec3cube.y,
+			z: vec3cube.z,
+			duration: 3,
+		});
+	}
+});
+
+if (fbxmodel) {
+	fbxmodel.position.x = 5;
+	console.log(fbxmodel);
+}
+
+let isWkeyDown = false;
+
+// Key Down Event Listener
+window.addEventListener("keydown", (key) => {
+	switch (key.code) {
+		case "KeyW":
+			
+			isWkeyDown = true;
+			animations[0].fadeOut(1)
+			break;
+	}
+});
+
+window.addEventListener("keyup", (key) => {
+	switch (key.code) {
+		case "KeyW":
+			isWkeyDown = false;
+			break;
+	}
 });
 
 let time = Date.now();
 
-let rotationEnabled = true;
 
-let playingStateCamera = new THREE.Vector3(15, 10, 0); // This Camera Position enabled when user agent is 'playing'. (Except the Y should be set to 10 or so)
 
-const tick = () => {
-  const currentTime = Date.now();
-  const deltaTime = currentTime - time;
-  time = currentTime;
 
-  if (fbxmodel && animationModel) {
-    mixer.update(clock.getDelta());
-  }
 
-  // Rotation Animation
-  if (gltfLoaded && rotationEnabled) {
-    mainGroup.rotation.y += 0.0003 * deltaTime;
-  }
+const tick = (tickparam) => { 
 
-  renderer.render(scene, camera);
-  controls.update();
+	const currentTime = Date.now(); 
+	const deltaTime = currentTime - time; 
+	time = currentTime; 
 
-  window.requestAnimationFrame(tick);
+
+	if (fbxmodel && animations) {
+		mixer.update(clock.getDelta());
+	}
+
+	// Rotation Animation
+	//   if (gltfLoaded && rotationEnabled) {
+	//     mainGroup.rotation.y += 0.0003 * deltaTime;
+	//   }
+
+
+
+	renderer.render(scene, camera);
+	controls.update();
+	window.requestAnimationFrame(tick);
+
+	
 };
+
 
 tick();
 
